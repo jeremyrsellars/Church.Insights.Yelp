@@ -1,1 +1,3 @@
-java -cp cljs.jar;src clojure.main node.clj
+@ECHO OFF
+call lein clean
+call lein cljsbuild once dev

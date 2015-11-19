@@ -38,10 +38,10 @@
 
 (defn process-rows [transform js-row-array continuation-fn]
   (println "read" (.-length js-row-array) "rows")
-  (println (aget js-row-array 0))
+  #_(println (aget js-row-array 0))
   (let [items (transform (vec js-row-array))]
-    (println "rows: " (count items))
-    (println "first: " (first items))
+    (println "transformed rows: " (count items))
+    #_(println "first: " (first items))
     (continuation-fn items)))
 
 (defn write-json-rows [file-name js-rows]
