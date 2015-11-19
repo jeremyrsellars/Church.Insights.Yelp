@@ -1,0 +1,4 @@
+*.rds
+*.csv
+*.zip
+/yelp_dataset_challenge_academic_dataset/
