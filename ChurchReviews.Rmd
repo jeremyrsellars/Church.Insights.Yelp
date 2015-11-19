@@ -27,6 +27,11 @@ if (!file.exists(review_json_file)){
 reviews <- read_json_data("church-reviews", prefix="church-reviews/")
 reviews$Date <- as.Date(reviews$date, "%Y-%m-%d")
 reviews$Month <- month(reviews$Date)
+
+review_counts <- read_json_data("review-counts", prefix="church-reviews/")
+names(review_counts) <- c("date","count")
+review_counts$Date <- as.Date(review_counts$date, "%Y-%m-%d")
+review_counts$Month <- month(review_counts$Date)
 ```
 
 [comment]: # (R2 - required section)
@@ -41,7 +46,12 @@ reviews$Month <- month(reviews$Date)
 ```{r results, echo=F}
 summary(reviews)
 ggplot(reviews, aes(x=Date)) + 
-  geom_histogram(binwidth=365) + facet_grid(. ~ Month, margins=TRUE)
+  geom_histogram(binwidth=365)
+#+ facet_grid(. ~ Month, margins=TRUE)
+
+ggplot(review_counts, aes(x=Date, y=count)) + 
+  geom_histogram(weight=review_counts$count, stat="bin")
+#+ facet_grid(. ~ Month, margins=TRUE)
 ```
 
 [comment]: # (R2 - required section)

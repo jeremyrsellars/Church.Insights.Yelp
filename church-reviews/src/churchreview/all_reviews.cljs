@@ -18,8 +18,7 @@
   (println "Counting reviews...")
   (->> (frequencies dates)
        (into (sorted-map))
-       clj->js
-       vector))
+       (mapv clj->js)))
 
 (defn count-reviews-by-date
   [next-fn]
