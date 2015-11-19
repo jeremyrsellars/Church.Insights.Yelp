@@ -1,0 +1,49 @@
+---
+title: "Church Reviews on Yelp"
+author: "Jeremy Sellars"
+date: "November 19, 2015"
+output: html_document
+---
+
+```{r fns, echo=FALSE}
+suppressMessages(suppressWarnings({
+  library(jsonlite)
+  library(ggplot2)
+  library(lubridate)
+  }))
+setwd("c:/code/jeremy.sellars/coursera/dsscapstone")
+read_json_data <-
+  function (d, prefix="yelp_dataset_challenge_academic_dataset/yelp_academic_dataset_")
+    stream_in(file(paste0(prefix, d, ".json")), verbose = F)
+```
+
+```{r fc, echo=FALSE}
+review_json_file <- "church-reviews/church-reviews.json"
+if (!file.exists(review_json_file)){
+  fn <- paste0(getwd(),"/church-reviews/build_run.cmd")
+  fn <- gsub("/", "\\\\", fn) # Windows file path conversion
+  suppressMessages(system(fn, intern=T, invisible =F))
+}
+reviews <- read_json_data("church-reviews", prefix="church-reviews/")
+reviews$Date <- as.Date(reviews$date, "%Y-%m-%d")
+reviews$Month <- month(reviews$Date)
+```
+
+[comment]: # (R2 - required section)
+## Introduction
+
+[comment]: # (R2 - required section)
+## Methods
+
+[comment]: # (R2 - required section)
+## Results
+
+```{r results, echo=F}
+summary(reviews)
+ggplot(reviews, aes(x=Date)) + 
+  geom_histogram(binwidth=365) + facet_grid(. ~ Month, margins=TRUE)
+```
+
+[comment]: # (R2 - required section)
+## Discussion
+
