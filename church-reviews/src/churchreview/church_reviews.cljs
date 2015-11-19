@@ -1,4 +1,4 @@
-(ns churchreview.reviews
+(ns churchreview.church-reviews
   (:require [cljs.nodejs :as node]
             [churchreview.config :as cfg]
             [churchreview.common :as common
@@ -16,8 +16,8 @@
 (def review-row->js (make-row->js review-fields))
 
 (defn row-vector->reviews-vec [rows]
-  (println "Processing review rows...")
-  (mapv review-row->js rows))
+  (println "Processed review rows...")
+  rows)
 
 (defn review-rows-processor [business-set]
   (partial process-rows row-vector->reviews-vec))
@@ -26,11 +26,14 @@
   [next-fn]
   (fn [churches]
     (let [church-business-id-set (->> churches (map #(.-business_id %)) (into #{}))]
-      (read-array-async (cfg/dataset-file "review") (make-church-review?-fn church-business-id-set)
+      (read-array-async
+        (cfg/dataset-file "review")
+        (make-church-review?-fn church-business-id-set)
+        review-row->js
         (fn [js-row-array]
           (let [processor (review-rows-processor church-business-id-set)]
             (processor js-row-array
               (fn [reviews]
-                (write-json-rows cfg/reviews-file reviews)
+                (write-json-rows cfg/church-reviews-file reviews)
                 (continue next-fn reviews)))))))))
 

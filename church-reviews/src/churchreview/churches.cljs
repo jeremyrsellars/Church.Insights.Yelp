@@ -18,14 +18,17 @@
 (def church-row->js (make-row->js business-fields))
 
 (defn row-vector->churches-vec [rows]
-  (println "Processing church rows...")
-  (mapv church-row->js rows))
+  (println "Processed church rows...")
+  rows)
 
 (def process-church-rows (partial process-rows row-vector->churches-vec))
 
 (defn find-churches
   [next-fn]
-  (read-array-async (cfg/dataset-file "business") church?
+  (read-array-async
+    (cfg/dataset-file "business")
+    church?
+    church-row->js
     (fn [js-row-array]
       (process-church-rows js-row-array
         (fn [churches]

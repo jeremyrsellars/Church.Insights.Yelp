@@ -27,14 +27,14 @@
     (new LineByLineReader file-name)
     handlers))
 
-(defn read-array-async [file-name keep? call-back]
-  (let [lines (array)
+(defn read-array-async [file-name keep? transform-js call-back]
+  (let [transformed (array)
         lr (line-by-line-reader file-name
     {:error #(.error js/console %)
      :line #(let [o (.parse js/JSON %)]
               (when (keep? o)
-                (.push lines o)))
-     :end #(call-back lines)})]))
+                (.push transformed (transform-js o))))
+     :end #(call-back transformed)})]))
 
 (defn process-rows [transform js-row-array continuation-fn]
   (println "read" (.-length js-row-array) "rows")
