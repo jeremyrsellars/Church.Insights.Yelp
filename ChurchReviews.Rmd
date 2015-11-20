@@ -1,5 +1,5 @@
 ---
-title: "Church Reviews on Yelp"
+title: "Insights from Church Reviews on Yelp"
 author: "Jeremy Sellars"
 date: "November 20, 2015"
 output: pdf_document
@@ -92,11 +92,11 @@ raw_church_plot <- ggplot(reviews, aes(x=Date)) + geom_histogram(binwidth=365.25
 grid.arrange(raw_review_plot, raw_church_plot, ncol=2)
 ```
 
-Accounting for the popularity of Yelp over time, the the following diagram shows the percentage of yelp reviews for churches.
-
 ### Church reviews over time
 
-```{r churches_vs_world_data, echo=F, cache=T}
+Accounting for the popularity of Yelp over time, the the following table shows the number of church reviews per million reviews.
+
+```{r churchs_vs_world_by_year, echo=F, cache=T}
 quarterly_reviews <-
   aggregate(all_review_dates$Date,
             by=list(YQ=factor(gsub("\\.", "-Q", as.character(quarter(all_review_dates$Date, with_year = T)))),
@@ -113,7 +113,17 @@ quarterly_church_reviews <-
             FUN=function(x) length(x))
 names(quarterly_church_reviews)[names(quarterly_church_reviews) == "x"] <-"Reviews"
 quarterly_church_reviews$Ratio <- quarterly_church_reviews$Reviews / quarterly_reviews$Reviews
+
+yearly_average <-
+  aggregate(quarterly_church_reviews$Ratio,
+            by=list(Year=quarterly_church_reviews$Y),
+            FUN=function(x) sum(x))
+names(yearly_average)[names(yearly_average) == "x"] <-"Mean_Review_Percent"
+yearly_average$PerMillionReviews <- round(yearly_average$Mean_Review_Percent * 1000000)
+kable(yearly_average[,c("Year","PerMillionReviews")])
 ```
+
+### Church reviews over time
 
 ```{r churches_vs_world, echo=F, fig.height=3.5}
 RQ <- ggplot(quarterly_reviews, aes(y=Reviews,x=Y + as.integer(Quarter)/4)) +
@@ -170,12 +180,12 @@ quarterly_average <-
 names(quarterly_average)[names(quarterly_average) == "x"] <-"Mean_Review_Percent"
 quarterly_average$Percentage <- paste0(round(quarterly_average$Mean_Review_Percent / sum(quarterly_average$Mean_Review_Percent) * 100),"%")
 quarterly_average$PerMillion <- round(quarterly_average$Mean_Review_Percent * 1000000)
-
+quarterly_average$Months <- c("Jan-Mar","Apr-Jun","Jul-Sep","Oct-Dec")
 ```
 
 Accounting for the growth in yelp popularity, we can compare the church reviews by quarter.
 
-`r kable(quarterly_average[,c("Quarter","PerMillion","Percentage")])`
+`r kable(quarterly_average[,c("Quarter","Months","PerMillion","Percentage")])`
 
 The third quarter seems to be the most important time to make a good impression, while Q1 seems to be slightly less important.
 
