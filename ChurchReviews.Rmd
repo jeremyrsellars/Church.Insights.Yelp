@@ -207,6 +207,7 @@ names(quarterly_average)[names(quarterly_average) == "x"] <-"Mean_Review_Percent
 quarterly_average$Percentage <- paste0(round(quarterly_average$Mean_Review_Percent / sum(quarterly_average$Mean_Review_Percent) * 100),"%")
 quarterly_average$PerMillion <- round(quarterly_average$Mean_Review_Percent * 1000000)
 quarterly_average$Months <- c("Jan-Mar","Apr-Jun","Jul-Sep","Oct-Dec")
+saveRDS(quarterly_average[,c("Quarter","Months","PerMillion","Percentage")], "quarterly_average.RDS")
 ```
 
 Accounting for the growth in Yelp popularity, we can compare the church reviews by quarter.
