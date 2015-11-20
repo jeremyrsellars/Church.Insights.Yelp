@@ -15,10 +15,8 @@
   (.-date row))
 
 (defn post-process [dates]
-  (println "Counting reviews...")
-  (->> (frequencies dates)
-       (into (sorted-map))
-       (mapv clj->js)))
+  (println "Processed all dates...")
+  dates)
 
 (defn count-reviews-by-date
   [next-fn]
