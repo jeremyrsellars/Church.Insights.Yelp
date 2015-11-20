@@ -1,17 +1,23 @@
 ---
 title: "Church Reviews on Yelp"
 author: "Jeremy Sellars"
-date: "November 19, 2015"
-output: html_document
+date: "November 20, 2015"
+output: pdf_document
 ---
 
 ```{r fns, echo=FALSE}
+min_date <- as.Date("2008-01-01")
+max_date <- as.Date("2015-01-01")
 suppressMessages(suppressWarnings({
   library(jsonlite)
   library(ggplot2)
   library(lubridate)
+  library(gridExtra)
+  library(reshape2)
+  library(scales)
+  library(knitr)
   }))
-setwd("c:/code/jeremy.sellars/coursera/dsscapstone")
+
 read_json_data <-
   function (d, prefix="yelp_dataset_challenge_academic_dataset/yelp_academic_dataset_")
     stream_in(file(paste0(prefix, d, ".json")), verbose = F)
@@ -27,33 +33,181 @@ if (!file.exists(review_json_file)){
 reviews <- read_json_data("church-reviews", prefix="church-reviews/")
 reviews$Date <- as.Date(reviews$date, "%Y-%m-%d")
 reviews$Month <- month(reviews$Date)
+reviews$Year <- year(reviews$Date)
+reviews <- reviews[reviews$Date >= min_date & reviews$Date < max_date,]
 
-review_counts <- read_json_data("review-counts", prefix="church-reviews/")
-names(review_counts) <- c("date","count")
-review_counts$Date <- as.Date(review_counts$date, "%Y-%m-%d")
-review_counts$Month <- month(review_counts$Date)
+# Cache results for efficiency
+ard_file <- "all_review_dates.rds"
+if (!file.exists(ard_file)){
+  all_review_dates <- read_json_data("review-counts", prefix="church-reviews/")
+  names(all_review_dates) <- c("date")
+  all_review_dates$Date <- as.Date(all_review_dates$date, "%Y-%m-%d")
+  all_review_dates$Month <- month(all_review_dates$Date)
+  all_review_dates <- all_review_dates[all_review_dates$Date >= min_date & all_review_dates$Date < max_date,]
+  saveRDS(all_review_dates, ard_file)
+} else {
+  all_review_dates <- readRDS(ard_file)
+}
+
+church_review_count <- nrow(reviews)
+church_count <- length(unique(reviews$business_id))
+city_count <- 10 # From the data set documentation
 ```
 
-[comment]: # (R2 - required section)
+[comment1]: # (R2 - required section)
 ## Introduction
 
-[comment]: # (R2 - required section)
-## Methods
+Can Yelp reviews be used to discover trends in church discovery and evaluation?  This document takes on three specific trends that may be of interest to sociologists, parishoners, and church leadership:
 
-[comment]: # (R2 - required section)
+1. Are churches reviewed on Yelp?
+1. Is there a particularly important season when more people evaluate (review) churches?
+1. How favorable are yelp reviews to churches?
+
+[comment2]: # (R2 - required section)
+## Methods and Data
+
+This research is all about reviews of churches.  The [Yelp dataset](https://www.yelp.com/dataset_challenge) includes a list of businesses, some of which are categorized as "Churches".  Only reviews about these church "businesses" are considered in this evaluation.  There is Yelp data from 2007, however since no churches were reviewed until 2008, only reviews from 2008-2014 are considered in this analysis.
+
+There are `r church_review_count` reviews from `r church_count` churches represented across these 10 cities:
+
+* U.K.: Edinburgh
+* Germany: Karlsruhe
+* Canada: Montreal and Waterloo
+* U.S.: Pittsburgh, Charlotte, Urbana-Champaign, Phoenix, Las Vegas, Madison
+
+1. The yelp community has grown and changed over time, so it is important to compare the growth in church reviews compared to the overall growth in yelp reviews across all categories.
+1. Next, an analysis of the time of year people evaluate churches is performed to see whether one quarter of the year is more important for a church to emphasize their distinctive qualities and values.
+1. Last, the star-ratings of reviews are compared to show how favorably reviewers see churches.
+
+\pagebreak
+
 ## Results
 
-```{r results, echo=F}
-summary(reviews)
-ggplot(reviews, aes(x=Date)) + 
-  geom_histogram(binwidth=365)
-#+ facet_grid(. ~ Month, margins=TRUE)
+### A rising tide lifts all boats (Yelp Usage Trends)
+The following diagrams, approximate the popularity of Yelp over time from `r min_date` to  `r max_date`.  Notice how the basic shape of the two graphs are similar, though the scale is quite different.  Approximately 1 review per 1000 are for churches.
 
-ggplot(review_counts, aes(x=Date, y=count)) + 
-  geom_histogram(weight=review_counts$count, stat="bin")
-#+ facet_grid(. ~ Month, margins=TRUE)
+```{r popularity, echo=F, fig.height=3}
+raw_review_plot <- ggplot(all_review_dates, aes(x=Date)) + geom_histogram(binwidth=365.25) + ggtitle("All reviews")
+raw_church_plot <- ggplot(reviews, aes(x=Date)) + geom_histogram(binwidth=365.25) + ggtitle("Church reviews")
+grid.arrange(raw_review_plot, raw_church_plot, ncol=2)
 ```
 
-[comment]: # (R2 - required section)
+Accounting for the popularity of Yelp over time, the the following diagram shows the percentage of yelp reviews for churches.
+
+### Church reviews over time
+
+```{r churches_vs_world_data, echo=F, cache=T}
+quarterly_reviews <-
+  aggregate(all_review_dates$Date,
+            by=list(YQ=factor(gsub("\\.", "-Q", as.character(quarter(all_review_dates$Date, with_year = T)))),
+                    Quarter=as.character(quarter(all_review_dates$Date, with_year = F)),
+                    Y=year(all_review_dates$Date)),
+            FUN=function(x) length(x))
+names(quarterly_reviews)[names(quarterly_reviews) == "x"] <-"Reviews"
+
+quarterly_church_reviews <-
+  aggregate(reviews$Date,
+            by=list(YQ=factor(gsub("\\.", "-Q", as.character(quarter(reviews$Date, with_year = T)))),
+                    Quarter=as.character(quarter(reviews$Date, with_year = F)),
+                    Y=year(reviews$Date)),
+            FUN=function(x) length(x))
+names(quarterly_church_reviews)[names(quarterly_church_reviews) == "x"] <-"Reviews"
+quarterly_church_reviews$Ratio <- quarterly_church_reviews$Reviews / quarterly_reviews$Reviews
+```
+
+```{r churches_vs_world, echo=F, fig.height=3.5}
+RQ <- ggplot(quarterly_reviews, aes(y=Reviews,x=Y + as.integer(Quarter)/4)) +
+  ggtitle("Yelp Reviews per quarter") +
+  geom_point(aes(color=Quarter), size=3)+
+  geom_line() +
+  xlab("Quarter") +
+  ylab("# Reviews") +
+  theme(legend.position="bottom")
+
+CRQ <- ggplot(quarterly_church_reviews, aes(y=Reviews,x=Y + as.integer(Quarter)/4)) +
+  ggtitle("Church Reviews per quarter") +
+  geom_point(aes(color=Quarter), size=3) +
+  geom_line() +
+  xlab("Quarter") +
+  ylab("# Church Reviews") +
+  theme(legend.position="bottom")
+
+
+grid.arrange(RQ, CRQ, ncol=2)
+```
+
+### When do people evaluate churches?
+
+It has been said that you only get one chance to make a first impression.  Is there a particular time of year when more reviews occur?
+
+```{r reviews_by_quarter, echo=F}
+QCR <- ggplot(quarterly_church_reviews, aes(y=Ratio,x=Y + as.integer(Quarter)/4)) +
+  ggtitle("Church Reviews per quarter") +
+  geom_point(aes(color=Quarter, shape=Quarter), size=3) +
+  geom_line(aes(group=Quarter, color=Quarter)) +
+  geom_abline(aes(color=Quarter)) +
+  #geom_text(aes(label=gsub("^", "Q", Quarter), color=Quarter),hjust=.75,vjust=-.75) +
+  xlab("Quarter") +
+  ylab("% Church Reviews") +
+  theme(legend.position="bottom")
+
+QCRsxs <- ggplot(quarterly_church_reviews, aes(y=Ratio,x=Y)) +
+  ggtitle("Quarterly Church Reviews\n(Quarters side x side)") +
+  geom_point(aes(color=Quarter), size=3) +
+  geom_line(aes(group=Quarter, color=Quarter)) +
+  geom_smooth(method=lm, size=1, na.rm=TRUE) +
+  theme(axis.text.x = element_blank()) +
+  ylab("Church Review Ratio") + 
+  facet_wrap(~ Quarter) +
+  theme(legend.position="bottom")
+
+grid.arrange(QCR, QCRsxs, ncol=2)
+
+quarterly_average <-
+  aggregate(quarterly_church_reviews$Ratio,
+            by=list(Quarter=quarterly_church_reviews$Quarter),
+            FUN=function(x) mean(x))
+names(quarterly_average)[names(quarterly_average) == "x"] <-"Mean_Review_Percent"
+quarterly_average$Percentage <- paste0(round(quarterly_average$Mean_Review_Percent / sum(quarterly_average$Mean_Review_Percent) * 100),"%")
+quarterly_average$PerMillion <- round(quarterly_average$Mean_Review_Percent * 1000000)
+
+```
+
+Accounting for the growth in yelp popularity, we can compare the church reviews by quarter.
+
+`r kable(quarterly_average[,c("Quarter","PerMillion","Percentage")])`
+
+The third quarter seems to be the most important time to make a good impression, while Q1 seems to be slightly less important.
+
+\pagebreak
+
+### Church favorability trends
+
+The Yelp reviews include a star rating which indicates how favorable the reviewer is to the church.  This chart accounts for the disproportionate number of Yelp reviews through the years by comparing percentages of the different favorability (stars).
+
+```{r favorability, echo=F}
+yearly_favorability <-
+  aggregate(reviews$Date,
+            by=list(stars=as.factor(reviews$stars),
+                    Year=year(reviews$Date)),
+            FUN=function(x) length(x))
+names(yearly_favorability)[names(yearly_favorability) == "x"] <-"Reviews"
+
+ggplot(yearly_favorability,aes(x = Year, y = Reviews,fill = stars)) + 
+  geom_bar(position = "fill",stat = "identity") +
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank()) +
+  ggtitle("Church Review Favorability") +
+  scale_y_continuous(labels = percent_format())
+```
+
+\pagebreak
+
+[comment4]: # (R2 - required section)
 ## Discussion
 
+1. It is clear that people are reviewing churches on Yelp and that as the popularity of Yelp grew, church review increased as well.
+1. The third quarter may be the most important time for a church to really show what they value, though people review year-round, so being consistent is certainly important.  
+1. How favorable are yelp reviews to churches?  Reviews are becoming increasingly favorable, although in the most recent years people have become willing to give a poor review rather than staying silent.
+1. At approximately `r round(church_review_count / church_count)` per church spread across `r as.integer(round((max_date - min_date)/365.25))` years, individual churches probably don't need to do data analysis of their church's reviews.  However, at `r round(church_review_count/city_count)` reviews per city, the city in which a church ministers may have enough data to warant statistical analysis.
+
+The trends analyzed have shown that Yelp data can be mined for valuable insights for churches that are concerned with making a good impression.
