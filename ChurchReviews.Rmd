@@ -2,7 +2,10 @@
 title: "Insights from Church Reviews on Yelp"
 author: "Jeremy Sellars"
 date: "November 20, 2015"
-output: pdf_document
+output:
+  pdf_document
+#  md_document:
+#    variant: markdown_github
 ---
 
 ```{r fns, echo=FALSE}
