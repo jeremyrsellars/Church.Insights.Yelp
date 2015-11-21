@@ -2,6 +2,14 @@
 <!--[if lt IE 9]>
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.1.1/gh-fork-ribbon.ie.min.css" />
 <![endif]-->
+<style>
+.section .reveal .state-background {background-color: #2d1707}
+.section .reveal h1 {font-family: "Times New Roman", Times, serif;}
+.reveal h2 {color: #888}
+.reveal h3 {color: #888; font-family: "Times New Roman", Times, serif;}
+.reveal a:not(.image) {color: #aaa}
+.reveal a:not(.image):hover {color: #ccc}
+</style>
 <div class="github-fork-ribbon-wrapper right">
   <div class="github-fork-ribbon" style="background-color: #333">
     <a href="https://github.com/jeremyrsellars/Church.Insights.Yelp">Fork me on GitHub</a>
@@ -31,9 +39,10 @@ Aside from reading the reviews of their own church and sister churches,
 
 Do people even review churches?
 ========================================================
-![Church Reviews per quarter](ChurchReviews_files/figure-html/monthly-1.png)
-
 People review churches throughout the year.  As Yelp has gained popularity, more and more people review businesses (and churches) online, each month adding to the total number of reviews.
+
+
+<a href="https://github.com/jeremyrsellars/Church.Insights.Yelp/blob/master/ChurchReviews_files/figure-html/monthly-1.png"><img style="max-height: 300px;" src="ChurchReviews_files/figure-html/monthly-1.png"/></a>
 
 When do people evaluate (new) churches?
 ========================================================
